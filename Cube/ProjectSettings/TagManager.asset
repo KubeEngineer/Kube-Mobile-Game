@@ -18,6 +18,7 @@ TagManager:
   - RenklendirEdu
   - help1
   - help2
+  - SinirDuvar
   layers:
   - Default
   - TransparentFX

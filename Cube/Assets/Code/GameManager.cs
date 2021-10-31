@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject complate, buton,RekorKirildi;
+    public GameObject complate, uiSceene,RekorKirildi;
     //public GameObject oyunBitti;
     //AltinKontrol altinKontrol;
     public Text coins, skorSonuc, skor, EnyuksekSkor, CoinSonuc,rekorKirildiPanelininSkor, rekorKirildiPanelininAltini;
@@ -20,11 +20,14 @@ public class GameManager : MonoBehaviour
 
     public GameObject pauseMenuUI;
     public static bool OyunDur = false;
+    public static bool isEduDone = false;
+    public static bool isDevelopment = false;
     bool tamam;
 
     void Start()
     {
-        if (PlayerPrefs.GetInt("Education") == 1 && PlayerPrefs.GetInt("EducationFirst") == 1)
+        isEduDone =PlayerPrefs.GetInt("Education") == 1 && PlayerPrefs.GetInt("EducationFirst") == 1;
+        if (isEduDone)
         {
             //altinKontrol = GameObject.Find("_script").GetComponent<AltinKontrol>();
             OyunDur = false;
@@ -35,7 +38,7 @@ public class GameManager : MonoBehaviour
             //gameScene = GameObject.FindGameObjectWithTag("Game");
         }else
         {
-            buton.SetActive(false);
+            uiSceene.SetActive(false);
             enabled = false;
         }
 
@@ -62,7 +65,7 @@ public class GameManager : MonoBehaviour
     public void Resume()
     {
         pauseMenuUI.SetActive(false);
-        buton.SetActive(true);
+        uiSceene.SetActive(true);
         Time.timeScale = 1f;
 
         OyunDur = false;
@@ -71,7 +74,7 @@ public class GameManager : MonoBehaviour
     public void Pause()
     {
         pauseMenuUI.SetActive(true);
-        buton.SetActive(false);
+        uiSceene.SetActive(false);
         Time.timeScale = 0f;
         OyunDur = true;
     }
@@ -82,7 +85,7 @@ public class GameManager : MonoBehaviour
         int eskiSkor = PlayerPrefs.GetInt("skor");
         if (yeniSkor > eskiSkor)
         {
-            buton.SetActive(false);
+            uiSceene.SetActive(false);
             rekorKirildiPanelininSkor.text = "Skor:"+(int)yeniSkor;
             rekorKirildiPanelininAltini.text = "COİNS:" + CoinsArttır;
             EnyuksekSkor.text = "HIGH SCORE\n" + (int)yeniSkor;
@@ -107,7 +110,7 @@ public class GameManager : MonoBehaviour
         AltinKontrol.paraGuncelle(CoinsArttır + AltinKontrol.parayiGetir());
         //gameScene.SetActive(false);
         complate.SetActive(true);
-        buton.SetActive(false);
+        uiSceene.SetActive(false);
     }
 
     public void skorHesap(int altin)

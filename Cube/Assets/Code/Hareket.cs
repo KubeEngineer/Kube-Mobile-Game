@@ -8,10 +8,11 @@ public class Hareket : MonoBehaviour
 
 
     private float hiz = 15f;
-    
+
     private void Start()
     {
-        if(PlayerPrefs.GetInt("EducationFirst") == 0)
+
+        if (GameManager.isDevelopment || PlayerPrefs.GetInt("EducationFirst") == 0)
         {
             enabled = false;
         }
@@ -19,27 +20,26 @@ public class Hareket : MonoBehaviour
         {
             hiz = 10f;
             StartCoroutine(hizlan());
-        }else
+        }
+        else
         {
             hiz = 10f;
             StartCoroutine(hizlan());
         }
-        
-
     }
 
     void Update()
     {
         if (KarakterKontrolcü.OyunAktif)
         {
-            float hareket_hizi = hiz * 1* Time.deltaTime;
-            
+            float hareket_hizi = hiz * 1 * Time.deltaTime;
+
             transform.Translate(0f, 0f, hareket_hizi);
         }
         else
         {
             StopAllCoroutines();
-            
+
         }
 
     }
@@ -50,7 +50,7 @@ public class Hareket : MonoBehaviour
         {
             bekle += 0.2f;
             hiz += 0.4f;
-           
+
             yield return new WaitForSeconds(bekle);
         }
     }

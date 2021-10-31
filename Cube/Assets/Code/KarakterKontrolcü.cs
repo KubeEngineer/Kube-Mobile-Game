@@ -1,11 +1,12 @@
 ﻿
 using UnityEngine;
-
+using System.Collections;
 
 public class KarakterKontrolcü : MonoBehaviour
 {
     public static bool OyunAktif;
     public static bool OyunBitti;
+    public ParticleSystem efect;
     public GameManager manager;
     public EducationManager EduManager;
     //Yeni Bolge Parcalanma icin
@@ -21,59 +22,77 @@ public class KarakterKontrolcü : MonoBehaviour
     private Color zemin;
     private Color backGround;
     private Camera cam;
+    private IEnumerator currentLerp;
     float cubesPivotDistance_x;
     float cubesPivotDistance_y;
     float cubesPivotDistance_z;
     Vector3 cubesPivot;
-    Material material, material1;
-    
+    Material materialRoad, materialFloor;
+
     // Start is called before the first frame update
     void Start()
     {
         GetComponent<MeshRenderer>().material = Resources.Load("Material/" + PlayerPrefs.GetString("GecerliKarakter"), typeof(Material)) as Material;
-        material = Resources.Load("Material/yol", typeof(Material)) as Material;
-        material1 = Resources.Load("Material/zemin", typeof(Material)) as Material;
-        cam = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
-        yol = material.color;
-        zemin = material1.color;
+        materialRoad = Resources.Load("Material/yol", typeof(Material)) as Material;
+        materialFloor = Resources.Load("Material/zemin", typeof(Material)) as Material;
+        cam = Camera.main;
+        yol = materialRoad.color;
+        zemin = materialFloor.color;
         backGround = cam.backgroundColor;
 
         OyunAktif = true;
         OyunBitti = false;
-        material.color = Random.ColorHSV();
-        material1.color = Random.ColorHSV();
+        materialRoad.color = Random.ColorHSV();
+        materialFloor.color = Random.ColorHSV();
         cam.backgroundColor = Random.ColorHSV();
     }
-    void Update()
+
+    IEnumerator coroutineLerp()
     {
-        if (material.color != yol && material1.color != zemin && cam.backgroundColor != backGround)
-        {
-            material.color = Color.Lerp(material.color, yol, Time.deltaTime * 10);
-            material1.color = Color.Lerp(material1.color, zemin, Time.deltaTime * 10);
-            cam.backgroundColor = Color.Lerp(cam.backgroundColor, backGround, Time.deltaTime * 10);
-        }
+        yield return new WaitWhile(colorLerp);
     }
+
+    bool colorLerp()
+    {
+
+        materialRoad.color = Color.Lerp(materialRoad.color, yol, Time.deltaTime * 3);
+        materialFloor.color = Color.Lerp(materialFloor.color, zemin, Time.deltaTime * 3);
+        cam.backgroundColor = Color.Lerp(cam.backgroundColor, backGround, Time.deltaTime * 3);
+
+        return materialRoad.color != yol || materialFloor.color != zemin || cam.backgroundColor != backGround;
+    }
+
+
     private void OnTriggerEnter(Collider other)
     {
-        if(PlayerPrefs.GetInt("Education") == 1 && PlayerPrefs.GetInt("EducationFirst") == 1)
+        if (GameManager.isEduDone)
         {
             switch (other.gameObject.tag)
             {
 
                 case "Altin":
-                    manager.skorHesap(2);
+                    efect.transform.position = other.gameObject.transform.position;
+                    var col = efect.colorOverLifetime;
+                    Gradient grad = new Gradient();
+                    Color startColor = other.gameObject.GetComponent<MeshRenderer>().material.color;
                     Destroy(other.gameObject);
-                    //GetComponent<AudioSource>().PlayOneShot(manager.altin,1f);
+                    grad.SetKeys(new GradientColorKey[]{new GradientColorKey(startColor,0.0f),new GradientColorKey(Color.red,1.0f)},
+                    new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(0f, 1.0f) });
+                    col.color = grad;
+                    if(efect.isPlaying) {
+                        efect.Stop();
+                        print(efect.isStopped);
+                    }
+                    efect.Play();
+                    print(efect.isPlaying);
+                    manager.skorHesap(2);
                     AudioSource.PlayClipAtPoint(manager.altin, transform.position, 2f);
-                    // GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>().backgroundColor = Random.ColorHSV();
+
+                    
                     break;
                 case "Renklendir":
                     Destroy(other.gameObject);
-
-                    AudioSource.PlayClipAtPoint(manager.altin, transform.position, 2f);
-                    yol = Random.ColorHSV();
-                    zemin = Random.ColorHSV();
-                    backGround = Random.ColorHSV();
+                    changeColor();
                     manager.skorHesap(4);
                     AudioSource.PlayClipAtPoint(manager.altin, transform.position, 2f);
                     break;
@@ -82,27 +101,25 @@ public class KarakterKontrolcü : MonoBehaviour
                     OyunBitti = true;
                     Destroy();
                     explosionPosition = gameObject.GetComponent<Collider>().ClosestPoint(other.gameObject.transform.position);
-                    //StartCoroutine(Destroy());
                     break;
             }
-        }else
+        }
+        else
         {
-            switch(other.gameObject.tag)
+            switch (other.gameObject.tag)
             {
                 case "AltinEdu":
                     EduManager.skorHesap(10);
                     Destroy(other.gameObject);
-                    //GetComponent<AudioSource>().PlayOneShot(manager.altin,1f);
                     AudioSource.PlayClipAtPoint(manager.altin, transform.position, 2f);
-                    // GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>().backgroundColor = Random.ColorHSV();
                     break;
                 case "RenklendirEdu":
                     Destroy(other.gameObject);
 
                     AudioSource.PlayClipAtPoint(manager.altin, transform.position, 2f);
-                    yol = Random.ColorHSV();
-                    zemin = Random.ColorHSV();
-                    backGround = Random.ColorHSV();
+                    changeColor();
+
+
                     EduManager.skorHesap(20);
                     AudioSource.PlayClipAtPoint(manager.altin, transform.position, 2f);
                     break;
@@ -115,9 +132,16 @@ public class KarakterKontrolcü : MonoBehaviour
                     break;
             }
         }
-       
     }
 
+    void changeColor()
+    {
+        yol = Random.ColorHSV();
+        zemin = Random.ColorHSV();
+        backGround = Random.ColorHSV();
+        StopAllCoroutines();
+        StartCoroutine(coroutineLerp());
+    }
 
     void Destroy()
     {
@@ -127,8 +151,8 @@ public class KarakterKontrolcü : MonoBehaviour
         cubesPivotDistance_y = cubeSize * cubesInrow_y / 2;
         cubesPivotDistance_z = cubeSize * cubesInrow_z / 2;
         cubesPivot = new Vector3(cubesPivotDistance_x, cubesPivotDistance_y, cubesPivotDistance_z);
-        //dokundugu noktayi alma
-        //ContactPoint contact = other.contacts[0];
+        // dokundugu noktayi alma
+        // ContactPoint contact = other.contacts[0];
         // GetComponent<AudioSource>().PlayOneShot(manager.engel, 1f);
         AudioSource.PlayClipAtPoint(manager.engel, transform.position, 2f);
         gameObject.SetActive(false);
